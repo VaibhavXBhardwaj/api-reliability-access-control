@@ -1,11 +1,20 @@
-from dotenv import load_dotenv
-import os
+from pydantic_settings import BaseSettings
+from pydantic import Field
 
 
-load_dotenv()
+class Settings(BaseSettings):
+    # Database
+    DATABASE_URL: str
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-JWT_SECRET = os.getenv("JWT_SECRET")
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
-print("DATABASE_URL =", DATABASE_URL)
+    # JWT
+    JWT_SECRET: str = Field(default="super-secret-change-this")
+    JWT_ALGORITHM: str = Field(default="HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=15)
+    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7)
+
+    class Config:
+        env_file = ".env"
+        extra = "forbid"
+
+
+settings = Settings()
