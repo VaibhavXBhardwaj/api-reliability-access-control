@@ -8,12 +8,14 @@ from app.db.models import User
 
 security = HTTPBearer()
 
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -43,3 +45,18 @@ def get_current_user(
         )
 
     return user
+
+
+# 🔐 RBAC — AUTHORIZATION LAYER
+def require_role(required_role: str):
+    def role_checker(
+        current_user: User = Depends(get_current_user)
+    ):
+        if current_user.role.name != required_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions"
+            )
+        return current_user
+
+    return role_checker

@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.core.jwt import create_access_token, create_refresh_token
 from app.db.database import get_db
 from app.db.models import User, RefreshToken
+from app.auth.dependencies import require_role
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -50,6 +51,13 @@ def login(
     tokens = login_user(db, user)
     return tokens
 
+@router.get("/admin-only")
+def admin_only_endpoint(
+    admin = Depends(require_role("admin"))
+):
+    return {
+        "message": "You are an admin. Authorization enforced."
+    }
 
 # ---------- REFRESH ----------
 
