@@ -6,18 +6,26 @@ from jose import jwt, JWTError
 
 from app.auth import schemas
 from app.auth.service import create_user, authenticate_user, login_user
+from app.auth.dependencies import require_role
 from app.core.config import settings
 from app.core.jwt import create_access_token, create_refresh_token
+from app.core.rate_limit import rate_limit
 from app.db.database import get_db
 from app.db.models import User, RefreshToken
-from app.auth.dependencies import require_role
+
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-# ---------- SIGNUP ----------
+# =========================
+# SIGNUP
+# =========================
 
-@router.post("/signup", response_model=schemas.SignupResponse)
+@router.post(
+    "/signup",
+    response_model=schemas.SignupResponse,
+    dependencies=[Depends(rate_limit("signup", 5, 60))]
+)
 def signup(
     data: schemas.SignupRequest,
     db: Session = Depends(get_db)
@@ -33,9 +41,15 @@ def signup(
     return user
 
 
-# ---------- LOGIN ----------
+# =========================
+# LOGIN
+# =========================
 
-@router.post("/login", response_model=schemas.LoginResponse)
+@router.post(
+    "/login",
+    response_model=schemas.LoginResponse,
+    dependencies=[Depends(rate_limit("login", 5, 60))]
+)
 def login(
     data: schemas.LoginRequest,
     db: Session = Depends(get_db)
@@ -48,20 +62,31 @@ def login(
             detail="Invalid email or password"
         )
 
-    tokens = login_user(db, user)
-    return tokens
+    return login_user(db, user)
+
+
+# =========================
+# ADMIN-ONLY (RBAC CHECK)
+# =========================
 
 @router.get("/admin-only")
 def admin_only_endpoint(
-    admin = Depends(require_role("admin"))
+    admin: User = Depends(require_role("admin"))
 ):
     return {
         "message": "You are an admin. Authorization enforced."
     }
 
-# ---------- REFRESH ----------
 
-@router.post("/refresh", response_model=schemas.TokenResponse)
+# =========================
+# REFRESH TOKEN
+# =========================
+
+@router.post(
+    "/refresh",
+    response_model=schemas.TokenResponse,
+    dependencies=[Depends(rate_limit("refresh", 10, 60))]
+)
 def refresh_access_token(
     data: schemas.RefreshRequest,
     db: Session = Depends(get_db)
@@ -89,7 +114,7 @@ def refresh_access_token(
 
     db_token = db.query(RefreshToken).filter(
         RefreshToken.token == data.refresh_token,
-        RefreshToken.revoked == False
+        RefreshToken.revoked.is_(False)
     ).first()
 
     if not db_token:
@@ -98,7 +123,7 @@ def refresh_access_token(
             detail="Refresh token revoked"
         )
 
-    # 🔥 revoke old refresh token
+    # revoke old refresh token
     db_token.revoked = True
 
     # issue new tokens
@@ -120,5 +145,6 @@ def refresh_access_token(
     db.commit()
 
     return {
-        "access_token": new_access_token
+        "access_token": new_access_token,
+        "token_type": "bearer"
     }

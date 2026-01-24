@@ -7,3 +7,8 @@ services:
       POSTGRES_DB: access_control
     ports:
       - "5432:5432"
+  redis:
+    image: redis:7
+    container_name: api-access-control-redis
+    ports:
+      - "6379:6379"
