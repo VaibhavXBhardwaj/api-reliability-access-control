@@ -1,82 +1,60 @@
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from passlib.context import CryptContext
 
-from app.db.models import User, Role, RefreshToken
-from app.core.security import get_password_hash, verify_password
+from app.db.models import User, RefreshToken
 from app.core.jwt import create_access_token, create_refresh_token
-from datetime import datetime
+from app.core.config import settings
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-# -------------------------
-# CREATE USER (SIGNUP)
-# -------------------------
+# ---------------- PASSWORD UTILS ----------------
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+
+def verify_password(password: str, hashed: str) -> bool:
+    return pwd_context.verify(password, hashed)
+
+
+# ---------------- USER CREATION ----------------
+
 def create_user(db: Session, email: str, password: str) -> User:
-    existing_user = db.query(User).filter(User.email == email).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
-
-    # get default role = user
-    role = db.query(Role).filter(Role.name == "user").first()
-    if not role:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Default role not found"
-        )
-
-    hashed_password = get_password_hash(password)
-
     user = User(
         email=email,
-        password_hash=hashed_password,  # ✅ MATCHES DB COLUMN
-        role_id=role.id                 # ✅ RBAC wired
+        password_hash=hash_password(password),
+        role_id=1  # default role = user
     )
-
     db.add(user)
     db.commit()
     db.refresh(user)
-
     return user
 
 
-# -------------------------
-# AUTHENTICATE USER
-# -------------------------
-def authenticate_user(db: Session, email: str, password: str) -> User:
+# ---------------- AUTHENTICATION ----------------
+
+def authenticate_user(db: Session, email: str, password: str):
     user = db.query(User).filter(User.email == email).first()
-
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials"
-        )
-
+        return None
     if not verify_password(password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials"
-        )
-
+        return None
     return user
 
 
-# -------------------------
-# LOGIN USER
-# -------------------------
-def login_user(db: Session, user: User) -> dict:
+def login_user(db, user):
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
 
-    refresh_entry = RefreshToken(
-        user_id=user.id,
-        token=refresh_token,
-        revoked=False,
-        created_at=datetime.utcnow()
+    db.add(
+        RefreshToken(
+            user_id=user.id,
+            token=refresh_token,
+            expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        )
     )
-
-    db.add(refresh_entry)
     db.commit()
 
     return {

@@ -15,7 +15,7 @@ def rate_limit(key_prefix: str, limit: int, window: int):
     window: time window in seconds
     """
 
-    async def limiter(request: Request):
+    async def limiter(request: Request): 
         # identify caller
         if hasattr(request.state, "user") and request.state.user:
             identifier = f"user:{request.state.user.id}"
