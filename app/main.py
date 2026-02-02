@@ -4,20 +4,31 @@ from fastapi.exceptions import RequestValidationError
 
 from app.auth.router import router as auth_router
 
-app = FastAPI(title="API Access Control")
+app = FastAPI(title="API Access Control Service", version="1.0.0")
 
-# Global validation error formatter
+
+# ---------- GLOBAL VALIDATION ERROR FORMAT ----------
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    formatted_errors = []
+
+    for err in exc.errors():
+        formatted_errors.append({
+            "field": ".".join(str(loc) for loc in err["loc"]),
+            "message": err["msg"]
+        })
+
     return JSONResponse(
         status_code=422,
-        content={"detail": exc.errors()}
+        content={"errors": formatted_errors}
     )
 
-# Include auth routes
-app.include_router(auth_router)
 
-# Health check
+# ---------- ROUTERS ----------
+app.include_router(auth_router, prefix="/v1")
+
+
+# ---------- HEALTH CHECK ----------
 @app.get("/health")
-def health():
+def health_check():
     return {"status": "ok"}

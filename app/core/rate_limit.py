@@ -1,42 +1,28 @@
 import time
-from fastapi import Request, HTTPException, status
-from redis import Redis
+from fastapi import Request, HTTPException
+from starlette.status import HTTP_429_TOO_MANY_REQUESTS
 
-# Redis client (already connected elsewhere if needed)
-redis = Redis(host="localhost", port=6379, decode_responses=True)
+# 🔥 Global in-memory store (used for testing)
+RATE_STORE: dict[str, list[float]] = {}
 
 
-def rate_limit(key_prefix: str, limit: int, window: int):
-    """
-    Rate limit dependency factory
+def rate_limit(key: str, limit: int, window_seconds: int):
+    def limiter(request: Request):
+        identifier = request.client.host
+        now = time.time()
 
-    key_prefix: logical name (signup, login, etc.)
-    limit: number of requests
-    window: time window in seconds
-    """
+        bucket = RATE_STORE.get(identifier, [])
 
-    async def limiter(request: Request): 
-        # identify caller
-        if hasattr(request.state, "user") and request.state.user:
-            identifier = f"user:{request.state.user.id}"
-        else:
-            identifier = f"ip:{request.client.host}"
+        # Remove expired timestamps
+        bucket = [ts for ts in bucket if now - ts < window_seconds]
 
-        redis_key = f"rate:{key_prefix}:{identifier}"
-
-        now = int(time.time())
-
-        pipe = redis.pipeline()
-        pipe.zadd(redis_key, {now: now})
-        pipe.zremrangebyscore(redis_key, 0, now - window)
-        pipe.zcard(redis_key)
-        pipe.expire(redis_key, window)
-        _, _, count, _ = pipe.execute()
-
-        if count > limit:
+        if len(bucket) >= limit:
             raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Too many requests"
+                status_code=HTTP_429_TOO_MANY_REQUESTS,
+                detail="Rate limit exceeded"
             )
+
+        bucket.append(now)
+        RATE_STORE[identifier] = bucket
 
     return limiter

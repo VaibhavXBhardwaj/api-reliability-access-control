@@ -44,18 +44,14 @@ def signup(
     return user
 
 
-# =========================
-# LOGIN
-# =========================
 @router.post(
     "/login",
     response_model=schemas.LoginResponse,
     dependencies=[Depends(rate_limit("login", 5, 60))]
 )
 def login(
-    request: Request,
     data: schemas.LoginRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     user = authenticate_user(db, data.email, data.password)
 
@@ -65,13 +61,7 @@ def login(
             detail="Invalid email or password"
         )
 
-    tokens = login_user(db, user)
-
-    # 🔥 AUDIT LOG
-    log_action(db, "login_success", request, user.id)
-
-    return tokens
-
+    return login_user(db, user)
 
 # =========================
 # ADMIN-ONLY (RBAC CHECK)
