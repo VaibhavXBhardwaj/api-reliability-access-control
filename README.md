@@ -3,7 +3,7 @@
                                          API Reliability & Access Control Service
 
 A backend infrastructure service responsible for authentication, authorization, rate limiting, and audit logging for protecting internal and external APIs.
-This project models a real-world platform/security layer that enforces identity, permissions, and request policies before traffic reaches application services.
+This project models a real world platform/security layer that enforces identity, permissions, and request policies before traffic reaches application services.
 
 
 
@@ -13,14 +13,14 @@ This service was designed to simulate such a layer, commonly found in production
 
 Core responsibilities:
 1. Identity verification via JWT authentication
-2. Role-based access control (RBAC)
-3. Abuse mitigation through Redis-backed rate limiting
+2. Role based access control (RBAC)
+3. Abuse mitigation through Redis backed rate limiting
 4. Security audit logging
 5. Centralized error handling and request validation
 
 
 ARCHITECTURE
-This service operates as a policy enforcement point, ensuring only authorized, rate-compliant, and traceable requests reach backend systems.
+This service operates as a policy enforcement point, ensuring only authorized, rate compliant, and traceable requests reach backend systems.
 
 Client Request -> API Reliability & Access Control Service -> Protected Downstream Services
 
@@ -37,7 +37,7 @@ TECHNOLOGY STACK
 3. Security
    JWT-based authentication (access + refresh tokens)
    bcrypt password hashing
-   Role-Based Access Control (RBAC)
+   Role  Based Access Control (RBAC)
 
 4. Caching & Traffic Control
    Redis (rate limiting & token tracking)
@@ -51,11 +51,11 @@ TECHNOLOGY STACK
    HTTPX (async API testing)
 
 AUTHENTICATON DESIGN :
-The system uses a short-lived access token + rotating refresh token model.
+The system uses a short lived access token + rotating refresh token model.
 Flow:
 1. User authenticates with credentials
 2. Server issues:
-    Access token (short-lived)
+    Access token (short lived)
     Refresh token (stored and rotatable)
 3. Access token is required for protected endpoints
 4. Expired access tokens can be renewed using a valid refresh token
@@ -64,7 +64,7 @@ Flow:
 
 
 Authorization (RBAC)
-Authorization is enforced using role-based guards.
+Authorization is enforced using role based guards.
 1. Users can have multiple roles
 2. Roles map to permission scopes
 3. Access checks are performed at the request layer before business logic execution
