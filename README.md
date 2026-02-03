@@ -1,6 +1,6 @@
                                                                                                        
                                                                                                        
-                                                                                                      API Reliability & Access Control Service
+                                         API Reliability & Access Control Service
 
 A backend infrastructure service responsible for authentication, authorization, rate limiting, and audit logging for protecting internal and external APIs.
 This project models a real-world platform/security layer that enforces identity, permissions, and request policies before traffic reaches application services.
