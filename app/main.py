@@ -1,34 +1,32 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
+from fastapi import FastAPI
+from app.api.v1.router import router as api_router
 
-from app.auth.router import router as auth_router
+from app.db.base import Base
+from app.db.database import engine
+from app.db.session import SessionLocal
+from app.db.init_db import init_roles
 
-app = FastAPI(title="API Access Control Service", version="1.0.0")
+from app.db import models  # ensures models are registered
 
+app = FastAPI(title="API Access Control")
 
-# ---------- GLOBAL VALIDATION ERROR FORMAT ----------
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    formatted_errors = []
-
-    for err in exc.errors():
-        formatted_errors.append({
-            "field": ".".join(str(loc) for loc in err["loc"]),
-            "message": err["msg"]
-        })
-
-    return JSONResponse(
-        status_code=422,
-        content={"errors": formatted_errors}
-    )
+# Create tables
+Base.metadata.create_all(bind=engine)
 
 
-# ---------- ROUTERS ----------
-app.include_router(auth_router, prefix="/v1")
+# Seed default roles when app starts
+@app.on_event("startup")
+def seed_roles():
+    db = SessionLocal()
+    try:
+        init_roles(db)
+    finally:
+        db.close()
 
 
-# ---------- HEALTH CHECK ----------
+app.include_router(api_router, prefix="/v1")
+
+
 @app.get("/health")
-def health_check():
+def health():
     return {"status": "ok"}

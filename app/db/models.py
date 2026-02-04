@@ -1,12 +1,10 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 from datetime import datetime
 
 from app.db.base import Base
 
 
-# ---------------- ROLES ----------------
 class Role(Base):
     __tablename__ = "roles"
 
@@ -16,7 +14,6 @@ class Role(Base):
     users = relationship("User", back_populates="role")
 
 
-# ---------------- USERS ----------------
 class User(Base):
     __tablename__ = "users"
 
@@ -31,16 +28,14 @@ class User(Base):
     audit_logs = relationship("AuditLog", back_populates="user")
 
 
-# ---------------- REFRESH TOKENS ----------------
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    token = Column(String, unique=True, nullable=False)
-    revoked = Column(Boolean, default=False)
+    token = Column(Text, nullable=False)
+    revoked = Column(Integer, default=0)
+    user_id = Column(Integer, ForeignKey("users.id"))
     expires_at = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="refresh_tokens")
 
@@ -49,10 +44,10 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    action = Column(String, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    action = Column(String, nullable=False)
     ip_address = Column(String, nullable=True)
-    user_agent = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    user_agent = Column(String, nullable=True)  # ✅ FIX ADDED
+    timestamp = Column(DateTime, default=datetime.utcnow)
 
-    user = relationship("User")
+    user = relationship("User", back_populates="audit_logs")

@@ -2,7 +2,8 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 
-from app.db.models import User, RefreshToken
+from app.db.models import User, RefreshToken, Role, AuditLog
+
 from app.core.jwt import create_access_token, create_refresh_token
 from app.core.config import settings
 
