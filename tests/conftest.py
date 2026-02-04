@@ -3,11 +3,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.db.base import Base
-from app import models  # this makes sure models are registered
+import app.db.models  # ✅ THIS registers models correctly
 from app.main import app
 from app.db.session import get_db
 
-# Use SQLite for fast CI tests
 TEST_DATABASE_URL = "sqlite:///./test.db"
 
 engine = create_engine(
@@ -16,7 +15,6 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-# 🔹 Create tables before tests, drop after
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db():
     Base.metadata.create_all(bind=engine)
@@ -24,7 +22,6 @@ def setup_test_db():
     Base.metadata.drop_all(bind=engine)
 
 
-# 🔹 Override FastAPI DB dependency
 def override_get_db():
     db = TestingSessionLocal()
     try:
