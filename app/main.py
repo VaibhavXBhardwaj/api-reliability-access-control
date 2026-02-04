@@ -1,11 +1,9 @@
 from fastapi import FastAPI
 from app.api.v1.router import router as api_router
-
 from app.db.base import Base
 from app.db.database import engine
 from app.db.session import SessionLocal
 from app.db.init_db import init_roles
-
 from app.db import models  # register models
 
 app = FastAPI(title="API Access Control")
@@ -13,10 +11,10 @@ app = FastAPI(title="API Access Control")
 
 @app.on_event("startup")
 def startup():
-    # Create tables safely at startup (not import time)
+    # Create tables AFTER app starts (not at import time)
     Base.metadata.create_all(bind=engine)
 
-    # Seed default roles
+    # Seed roles
     db = SessionLocal()
     try:
         init_roles(db)
