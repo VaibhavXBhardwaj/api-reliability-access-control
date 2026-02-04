@@ -18,7 +18,7 @@ def startup():
     import app.db.models  # 👈 REGISTER ALL MODELS HERE
 
     # Create tables
-    Base.metadata.create_all(bind=engine)
+   # Base.metadata.create_all(bind=engine)
 
     # Seed roles
     db = SessionLocal()
