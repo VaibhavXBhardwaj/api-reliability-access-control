@@ -1,50 +1,18 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from fastapi.testclient import TestClient
-
-from app.main import app
 from app.db.base import Base
-from app.db import models  # IMPORTANT: ensures models are registered
-from app.db.session import get_db
+from app.db import models  # ensures models are registered
+import os
 
-# Use SQLite for fast, isolated testing
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+TEST_DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False}
-)
-
-TestingSessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+engine = create_engine(TEST_DATABASE_URL)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-# 🔹 Create tables before each test and drop after
-@pytest.fixture(scope="function", autouse=True)
-def create_test_db():
+@pytest.fixture(scope="session", autouse=True)
+def create_test_database():
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
-
-
-# 🔹 Override dependency to use test DB
-def override_get_db():
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
-
-
-# 🔹 Test client
-@pytest.fixture(scope="module")
-def client():
-    with TestClient(app) as c:
-        yield c
