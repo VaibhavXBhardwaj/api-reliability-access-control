@@ -10,6 +10,8 @@ from app.core.audit import log_action
 security = HTTPBearer()
 
 
+# ---------------- DATABASE DEP ----------------
+
 def get_db():
     db = SessionLocal()
     try:
@@ -17,6 +19,8 @@ def get_db():
     finally:
         db.close()
 
+
+# ---------------- CURRENT USER ----------------
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -29,8 +33,9 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
 
-    # 🔥 THIS MUST WORK
     user = db.query(User).filter(User.id == int(user_id)).first()
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
@@ -38,6 +43,7 @@ def get_current_user(
     return user
 
 
+# ---------------- ROLE CHECK ----------------
 
 def require_role(required_role: str):
     def role_checker(
@@ -45,8 +51,8 @@ def require_role(required_role: str):
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
     ):
-        if current_user.role.name != required_role:
-            # 🔥 AUDIT LOG PERMISSION DENIED
+        # 🔥 SAFETY: ensure user has role relationship loaded
+        if not current_user.role or current_user.role.name != required_role:
             log_action(
                 db,
                 f"permission_denied_required_{required_role}",

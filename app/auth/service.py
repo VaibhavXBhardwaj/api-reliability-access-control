@@ -2,8 +2,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 
-from app.db.models import User, RefreshToken, Role, AuditLog
-
+from app.db.models import User, RefreshToken, Role
 from app.core.jwt import create_access_token, create_refresh_token
 from app.core.config import settings
 
@@ -23,11 +22,17 @@ def verify_password(password: str, hashed: str) -> bool:
 # ---------------- USER CREATION ----------------
 
 def create_user(db: Session, email: str, password: str) -> User:
+    # 🔥 NEVER hardcode role_id
+    role = db.query(Role).filter(Role.name == "user").first()
+    if not role:
+        raise Exception("Default role 'user' not found. Did roles seed run?")
+
     user = User(
         email=email,
         password_hash=hash_password(password),
-        role_id=1  # default role = user
+        role_id=role.id
     )
+
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -45,7 +50,7 @@ def authenticate_user(db: Session, email: str, password: str):
     return user
 
 
-def login_user(db, user):
+def login_user(db: Session, user: User):
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
 
