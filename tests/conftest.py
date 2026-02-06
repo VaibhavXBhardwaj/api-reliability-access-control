@@ -3,29 +3,61 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+# 🔥 Force TEST database (SQLite, not Postgres)
+TEST_DATABASE_URL = "sqlite:///./test.db"
+os.environ["DATABASE_URL"] = TEST_DATABASE_URL
+
 from app.db.base import Base
-from app.db import models  # ensures models are registered
-from app.db.init_db import init_roles  # 🔥 IMPORT ROLE SEEDER
+from app.db.session import get_db
+from app.db.init_db import init_roles
+from app.main import app
 
-TEST_DATABASE_URL = os.getenv("DATABASE_URL")
-
-engine = create_engine(TEST_DATABASE_URL)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+from fastapi.testclient import TestClient
 
 
-@pytest.fixture(scope="session", autouse=True)
-def setup_test_database():
-    # Create tables
-    Base.metadata.create_all(bind=engine)
+# Create SQLite engine for tests
+engine = create_engine(
+    TEST_DATABASE_URL,
+    connect_args={"check_same_thread": False}
+)
 
-    # Seed default roles (user, admin, etc.)
+TestingSessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
+
+
+# Create tables before tests start
+Base.metadata.create_all(bind=engine)
+
+
+# Seed roles before tests
+def seed_roles():
     db = TestingSessionLocal()
     try:
-        init_roles(db)   # 🔥 THIS FIXES YOUR ERROR
+        init_roles(db)
     finally:
         db.close()
 
-    yield
 
-    # Drop tables after tests
-    Base.metadata.drop_all(bind=engine)
+seed_roles()
+
+
+# Override DB dependency to use test DB
+def override_get_db():
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+app.dependency_overrides[get_db] = override_get_db
+
+
+# Provide test client
+@pytest.fixture(scope="module")
+def client():
+    with TestClient(app) as c:
+        yield c

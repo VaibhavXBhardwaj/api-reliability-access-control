@@ -22,17 +22,10 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     response_model=schemas.SignupResponse,
     dependencies=[Depends(rate_limit("signup", 5, 60))]
 )
-def signup(
-    request: Request,
-    data: schemas.SignupRequest,
-    db: Session = Depends(get_db)
-):
+def signup(request: Request, data: schemas.SignupRequest, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == data.email).first()
     if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
+        raise HTTPException(status_code=400, detail="Email already registered")
 
     user = create_user(db, data.email, data.password)
     log_action(db, "user_signup", request, user.id)
@@ -45,25 +38,17 @@ def signup(
     response_model=schemas.LoginResponse,
     dependencies=[Depends(rate_limit("login", 5, 60))]
 )
-def login(
-    data: schemas.LoginRequest,
-    db: Session = Depends(get_db),
-):
+def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
     user = authenticate_user(db, data.email, data.password)
 
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
-        )
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
     return login_user(db, user)
 
 
 @router.get("/admin-only")
-def admin_only_endpoint(
-    admin: User = Depends(require_role("admin"))
-):
+def admin_only_endpoint(admin: User = Depends(require_role("admin"))):
     return {"message": "You are an admin. Authorization enforced."}
 
 
@@ -72,41 +57,22 @@ def admin_only_endpoint(
     response_model=schemas.TokenResponse,
     dependencies=[Depends(rate_limit("refresh", 10, 60))]
 )
-def refresh_access_token(
-    request: Request,
-    data: schemas.RefreshRequest,
-    db: Session = Depends(get_db)
-):
+def refresh_access_token(request: Request, data: schemas.RefreshRequest, db: Session = Depends(get_db)):
     try:
-        payload = jwt.decode(
-            data.refresh_token,
-            settings.JWT_SECRET,
-            algorithms=["HS256"]
-        )
+        payload = jwt.decode(data.refresh_token, settings.JWT_SECRET, algorithms=["HS256"])
 
         if payload.get("type") != "refresh":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token type"
-            )
+            raise HTTPException(status_code=401, detail="Invalid token type")
 
         user_id = int(payload.get("sub"))
 
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired refresh token"
-        )
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
-    db_token = db.query(RefreshToken).filter(
-        RefreshToken.token == data.refresh_token
-    ).first()
+    db_token = db.query(RefreshToken).filter(RefreshToken.token == data.refresh_token).first()
 
     if not db_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token not found"
-        )
+        raise HTTPException(status_code=401, detail="Refresh token not found")
 
     db.delete(db_token)
 
@@ -117,15 +83,15 @@ def refresh_access_token(
         RefreshToken(
             user_id=user_id,
             token=new_refresh_token,
-            expires_at=datetime.utcnow() + timedelta(days=7)
+            expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         )
     )
 
     db.commit()
-
     log_action(db, "token_refresh", request, user_id)
 
     return {
         "access_token": new_access_token,
+        "refresh_token": new_refresh_token,
         "token_type": "bearer"
     }

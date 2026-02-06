@@ -9,8 +9,6 @@ from app.core.config import settings
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-# ---------------- PASSWORD UTILS ----------------
-
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
@@ -19,18 +17,16 @@ def verify_password(password: str, hashed: str) -> bool:
     return pwd_context.verify(password, hashed)
 
 
-# ---------------- USER CREATION ----------------
-
 def create_user(db: Session, email: str, password: str) -> User:
-    # 🔥 NEVER hardcode role_id
-    role = db.query(Role).filter(Role.name == "user").first()
-    if not role:
-        raise Exception("Default role 'user' not found. Did roles seed run?")
+    default_role = db.query(Role).filter(Role.name == "user").first()
+
+    if not default_role:
+        raise Exception("Default role 'user' not found. Did you seed roles?")
 
     user = User(
         email=email,
         password_hash=hash_password(password),
-        role_id=role.id
+        role_id=default_role.id
     )
 
     db.add(user)
@@ -39,13 +35,9 @@ def create_user(db: Session, email: str, password: str) -> User:
     return user
 
 
-# ---------------- AUTHENTICATION ----------------
-
 def authenticate_user(db: Session, email: str, password: str):
     user = db.query(User).filter(User.email == email).first()
-    if not user:
-        return None
-    if not verify_password(password, user.password_hash):
+    if not user or not verify_password(password, user.password_hash):
         return None
     return user
 
