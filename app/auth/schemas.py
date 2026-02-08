@@ -28,10 +28,11 @@ class SignupResponse(BaseModel):
     id: int
     email: EmailStr
 
+class SignupRequest(BaseModel):
+    email: EmailStr
+    password: str
+    role: str = "user"  
 
-# =========================
-# LOGIN
-# =========================
 
 class LoginRequest(BaseModel):
     email: EmailStr = Field(..., example="user@example.com")

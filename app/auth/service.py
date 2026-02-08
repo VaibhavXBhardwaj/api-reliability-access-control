@@ -17,16 +17,16 @@ def verify_password(password: str, hashed: str) -> bool:
     return pwd_context.verify(password, hashed)
 
 
-def create_user(db: Session, email: str, password: str) -> User:
-    default_role = db.query(Role).filter(Role.name == "user").first()
+def create_user(db: Session, email: str, password: str, role_name: str = "user") -> User:
+    role = db.query(Role).filter(Role.name == role_name.lower()).first()
 
-    if not default_role:
-        raise Exception("Default role 'user' not found. Did you seed roles?")
+    if not role:
+        raise Exception(f"Role '{role_name}' not found.")
 
     user = User(
         email=email,
         password_hash=hash_password(password),
-        role_id=default_role.id
+        role_id=role.id
     )
 
     db.add(user)

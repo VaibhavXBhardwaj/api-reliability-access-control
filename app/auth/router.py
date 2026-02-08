@@ -27,7 +27,7 @@ def signup(request: Request, data: schemas.SignupRequest, db: Session = Depends(
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    user = create_user(db, data.email, data.password)
+    user = create_user(db, data.email, data.password, data.role)
     log_action(db, "user_signup", request, user.id)
 
     return user
