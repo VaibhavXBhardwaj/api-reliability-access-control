@@ -14,6 +14,7 @@ origins = [
     "http://127.0.0.1:3000",
     "https://auth-rbac-frontend.onrender.com",
 ]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -21,6 +22,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.on_event("startup")
 def startup():
@@ -32,7 +34,9 @@ def startup():
     finally:
         db.close()
 
+
 app.include_router(api_router, prefix="/v1")
+
 
 @app.get("/health")
 def health():
