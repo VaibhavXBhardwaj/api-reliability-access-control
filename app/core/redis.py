@@ -1,11 +1,25 @@
+import os
 import redis
-from app.core.config import settings
+from urllib.parse import urlparse
 
-redis_client = redis.Redis(
-    host=settings.REDIS_HOST,
-    port=settings.REDIS_PORT,
-    decode_responses=True
-)
+redis_url = os.getenv("REDIS_URL")
+
+if redis_url:
+    # Render / external URL format
+    parsed = urlparse(redis_url)
+    redis_client = redis.Redis(
+        host=parsed.hostname,
+        port=parsed.port,
+        password=parsed.password,
+        decode_responses=True
+    )
+else:
+    # Local / Railway internal network
+    redis_client = redis.Redis(
+        host=os.getenv("REDIS_HOST", "localhost"),
+        port=int(os.getenv("REDIS_PORT", 6379)),
+        decode_responses=True
+    )
 
 try:
     redis_client.ping()
