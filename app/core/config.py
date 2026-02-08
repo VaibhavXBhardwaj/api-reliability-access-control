@@ -1,40 +1,19 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from pydantic_settings import BaseSettings
 
-from app.api.v1.router import router as api_router
-from app.db.base import Base
-from app.db.database import engine
-from app.db.session import SessionLocal
-from app.db.init_db import init_roles
 
-app = FastAPI(title="API Access Control")
+class Settings(BaseSettings):
+    DATABASE_URL: str
+    JWT_SECRET: str
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://your-frontend-domain.onrender.com",  # 🔥 REPLACE when frontend deployed
-]
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_URL: str | None = None
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    class Config:
+        env_file = ".env"
 
-@app.on_event("startup")
-def startup():
-    Base.metadata.create_all(bind=engine)
 
-    db = SessionLocal()
-    try:
-        init_roles(db)
-    finally:
-        db.close()
-
-app.include_router(api_router, prefix="/v1")
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+settings = Settings()
