@@ -3,19 +3,13 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from app.core.jwt import decode_access_token
-from app.db.session import SessionLocal
+from app.db.session import get_db
 from app.db.models import User
 from app.core.audit import log_action
 
 security = HTTPBearer()
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 def get_current_user(
