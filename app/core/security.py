@@ -1,9 +1,13 @@
 from passlib.context import CryptContext
+from app.core.config import settings
 
 pwd_context = CryptContext(
     schemes=["bcrypt"],
     deprecated="auto"
 )
+
+SECRET_KEY = settings.JWT_SECRET
+ALGORITHM = settings.JWT_ALGORITHM
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)

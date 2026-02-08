@@ -9,12 +9,11 @@ from app.db.init_db import init_roles
 
 app = FastAPI(title="API Access Control")
 
-
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://auth-rbac-frontend.onrender.com",
 ]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -23,10 +22,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.on_event("startup")
 def startup():
-    # Create tables on startup
     Base.metadata.create_all(bind=engine)
 
     db = SessionLocal()
@@ -35,12 +32,8 @@ def startup():
     finally:
         db.close()
 
-
-# API routes
 app.include_router(api_router, prefix="/v1")
 
-
-# Health check
 @app.get("/health")
 def health():
     return {"status": "ok"}
