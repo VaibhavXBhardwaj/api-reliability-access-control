@@ -1,0 +1,5 @@
+
+{
+  "name": "Auth & RBAC Demo Panel",
+  "description": "A clean, functional developer dashboard for testing FastAPI authentication, role-based access control, and rate limiting."
+}
