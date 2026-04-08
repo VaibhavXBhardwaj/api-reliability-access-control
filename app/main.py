@@ -13,6 +13,7 @@ origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://auth-rbac-frontend.onrender.com",
+    "https://api-reliability-access-control.vercel.app",
 ]
 
 app.add_middleware(
