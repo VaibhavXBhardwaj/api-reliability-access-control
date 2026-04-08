@@ -39,6 +39,9 @@ A production grade API gateway demonstrating authentication, role-based access c
 | Backend Hosting | Render |
 
 ---
+## Demo Screenshot:
+<img width="1898" height="905" alt="Screenshot 2026-04-08 160323" src="https://github.com/user-attachments/assets/8f2f4ae1-7828-4fe4-ad86-9ab5146eedc8" />
+
 
 ## Architecture
 
