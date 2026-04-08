@@ -1,130 +1,152 @@
-                                                                                                       
-                                                                                                       
-                                         API Reliability & Access Control Service
+     # API Reliability & Access Control
 
-A backend infrastructure service responsible for authentication, authorization, rate limiting, and audit logging for protecting internal and external APIs.
-This project models a real world platform/security layer that enforces identity, permissions, and request policies before traffic reaches application services.
+![FastAPI](https://img.shields.io/badge/FastAPI-0.128.0-009688?style=for-the-badge&logo=fastapi)
+![React](https://img.shields.io/badge/React-TypeScript-61DAFB?style=for-the-badge&logo=react)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?style=for-the-badge&logo=postgresql)
+![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
+A production grade API gateway demonstrating authentication, role-based access control (RBAC), rate limiting, token refresh, and audit logging — built with FastAPI and React.
 
+**Live Demo:** https://api-reliability-access-control.vercel.app  
+**API Docs:** https://api-reliability-access-control-1.onrender.com/docs
 
-ABOUT
-Modern distributed systems require a dedicated control layer to handle access enforcement, abuse prevention, and traceability. 
-This service was designed to simulate such a layer, commonly found in production environments as part of an API gateway or platform security stack.
+## Features
 
-Core responsibilities:
-1. Identity verification via JWT authentication
-2. Role based access control (RBAC)
-3. Abuse mitigation through Redis backed rate limiting
-4. Security audit logging
-5. Centralized error handling and request validation
-
-
-ARCHITECTURE
-This service operates as a policy enforcement point, ensuring only authorized, rate compliant, and traceable requests reach backend systems.
-
-Client Request -> API Reliability & Access Control Service -> Protected Downstream Services
-
-
-TECHNOLOGY STACK
-1. Backend Framework
-      FastAPI (Python, async-first)
-      Uvicorn (ASGI server)
-2. Persistence
-   PostgreSQL (primary relational datastore)
-   SQLAlchemy 2.0 (ORM)
-   Alembic (schema migrations)
-
-3. Security
-   JWT-based authentication (access + refresh tokens)
-   bcrypt password hashing
-   Role  Based Access Control (RBAC)
-
-4. Caching & Traffic Control
-   Redis (rate limiting & token tracking)
-
-5. DevOps
-   Docker & Docker Compose
-   GitHub Actions (CI pipeline)
-
-6. Testing
-   Pytest
-   HTTPX (async API testing)
-
-AUTHENTICATON DESIGN :
-The system uses a short lived access token + rotating refresh token model.
-Flow:
-1. User authenticates with credentials
-2. Server issues:
-    Access token (short lived)
-    Refresh token (stored and rotatable)
-3. Access token is required for protected endpoints
-4. Expired access tokens can be renewed using a valid refresh token
-5. Refresh tokens are rotated and can be revoked to limit session abuse
-6. This design mirrors real-world stateless authentication strategies used in scalable systems.
+- **JWT Authentication** — Secure signup/login with access & refresh token flow
+- **Role-Based Access Control** — User and Admin roles with protected endpoints
+- **Token Refresh** — Automatic access token renewal via refresh tokens
+- **Rate Limiting** — Redis-backed request throttling per user
+- **Audit Logging** — Every auth event is logged and viewable in the dashboard
+- **Health Check Endpoint** — `/health` for uptime monitoring
+- **Admin Panel** — Dedicated admin dashboard for user management
+- **Dockerized** — Full Docker Compose setup for local development
 
 
-Authorization (RBAC)
-Authorization is enforced using role based guards.
-1. Users can have multiple roles
-2. Roles map to permission scopes
-3. Access checks are performed at the request layer before business logic execution
-4. Unauthorized access results in 403 Forbidden.
+## Tech Stack
 
-Rate Limiting Strategy
-To protect services from abuse and ensure fair resource usage:
-1. Limits enforced per user and per IP
-2. Counters stored in Redis for low-latency, high-throughput checks
-3. Exceeded limits return HTTP 429 Too Many Requests
-Redis is used to avoid database contention and allow fast expiration-based counters.
+| Layer | Technology |
 
-Audit Logging
-All security-sensitive actions are recorded, including:
-1. Authentication events
-2 Token refresh and revocation
-3. Authorization failures
-4. Administrative actions
-Each audit entry captures:
-1. Actor identity
-2. Action performed
-3. Timestamp
-4. Source IP
-This provides traceability similar to compliance and monitoring systems in production environments.
+| Backend | FastAPI, Python 3.12 |
+| Frontend | React, TypeScript, Vite |
+| Database | PostgreSQL 15 (Neon in production) |
+| Cache / Rate Limiting | Redis 7 (Upstash in production) |
+| Auth | JWT (python-jose), Passlib, Bcrypt |
+| ORM | SQLAlchemy 2.0 |
+| Containerization | Docker, Docker Compose |
+| Frontend Hosting | Vercel |
+| Backend Hosting | Render |
 
-ERROR HANDLING AND API STANDARDS
-1. Centralized exception handling
-2. Consistent JSON error responses
-3. No internal stack traces exposed
-4. Proper HTTP semantics (401, 403, 429, etc.)
-5. Versioned API routes (/v1)
+---
+
+## Architecture
 
 
-LOCAL DEVELOPMEN
-Requirements
-1. Docker
-2. Docker Compose
-Run the system
- - docker-compose up --build
-Services started:
-. API Server
-. PostgreSQL
-. Redis
-API available at:
- - http://localhost:8000
 
-TESTING
-Automated tests cover:
-- Authentication and token lifecycle
-- Authorization enforcement
-- Rate limiting behavior
-Run tests locally:
- - pytest
+![bcde22e1-7edc-4112-942c-98342676e13f](https://github.com/user-attachments/assets/cb7d9760-b99d-4d1d-989d-bdf0bc5b16b7)
 
 
-FUTURE IMPROVEMENTS
-. Distributed rate limiting across instances
-. Metrics and monitoring integration
-. Token introspection endpoint
-. Policy-based permission system
 
-AUTHOR
-Built to explore backend architecture, API security, and platform engineering concepts through a production-style service.
+
+
+
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Description | Auth |
+
+| POST | `/v1/auth/signup` | Register a new user | Public |
+| POST | `/v1/auth/login` | Login and get tokens | Public |
+| POST | `/v1/auth/refresh` | Refresh access token | Public |
+| GET | `/v1/auth/admin-only` | Admin protected route | Admin |
+| GET | `/health` | Health check | Public |
+
+
+## Local Development
+
+### Prerequisites
+- Docker & Docker Compose
+- Node.js 18+
+
+### 1. Clone the repo
+```bash
+git clone https://github.com/VaibhavXBhardwaj/api-reliability-access-control.git
+cd api-reliability-access-control
+```
+
+### 2. Create `.env` file
+```env
+DATABASE_URL=postgresql://admin:admin@postgres:5432/access_control
+JWT_SECRET=supersecretkey123
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
+REDIS_URL=redis://redis:6379
+```
+
+### 3. Start the backend
+```bash
+docker-compose up --build
+```
+Backend runs at: http://localhost:8000  
+API Docs: http://localhost:8000/docs
+
+### 4. Start the frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Frontend runs at: http://localhost:3000
+
+---
+
+## Project Structure
+
+api-reliability-access-control/
+├── app/
+│   ├── api/v1/          # API routes
+│   ├── auth/            # Auth logic (router, service, schemas)
+│   ├── core/            # JWT, config, settings
+│   ├── db/              # Database setup, models, session
+│   └── main.py          # FastAPI app entry point
+├── frontend/
+│   ├── src/
+│   │   ├── components/  # Reusable UI components
+│   │   ├── context/     # Auth context
+│   │   └── pages/       # Login, Signup, Dashboard, Admin
+│   └── package.json
+├── tests/               # Pytest test suite
+├── Dockerfile
+├── docker-compose.yml
+└── requirements.txt
+
+---
+
+## Running Tests
+
+```bash
+docker-compose exec api pytest tests/ -v
+```
+## Deployment
+
+| Service | Provider |
+
+| Frontend | Vercel |
+| Backend | Render |
+| PostgreSQL | Neon |
+| Redis | Upstash |
+| Uptime Monitoring | UptimeRobot |
+
+
+## License
+
+MIT License — feel free to use this project as a reference or template.
+
+
+## Author
+
+**Vaibhav Bhardwaj**  
+[GitHub](https://github.com/VaibhavXBhardwaj) · [LinkedIn](https://www.linkedin.com/in/vaibhavbhardwaj2810/)
