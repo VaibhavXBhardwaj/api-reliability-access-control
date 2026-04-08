@@ -107,24 +107,7 @@ Frontend runs at: http://localhost:3000
 ---
 
 ## Project Structure
-
-api-reliability-access-control/
-├── app/
-│   ├── api/v1/          # API routes
-│   ├── auth/            # Auth logic (router, service, schemas)
-│   ├── core/            # JWT, config, settings
-│   ├── db/              # Database setup, models, session
-│   └── main.py          # FastAPI app entry point
-├── frontend/
-│   ├── src/
-│   │   ├── components/  # Reusable UI components
-│   │   ├── context/     # Auth context
-│   │   └── pages/       # Login, Signup, Dashboard, Admin
-│   └── package.json
-├── tests/               # Pytest test suite
-├── Dockerfile
-├── docker-compose.yml
-└── requirements.txt
+![37930597-bef3-4921-8034-aa9f9c7b74e6](https://github.com/user-attachments/assets/d51d57d2-df59-42b0-914f-564c9668c08b)
 
 ---
 
